@@ -1,0 +1,106 @@
+project:
+  name: matrix-inverse-llm
+  description: >
+    Synthetic-data LoRA fine-tuning pipeline to test how accurately a small LLM
+    can output inverses of dense square matrices.
+  seed: 42
+
+paths:
+  data_dir: data
+  raw_dir: data/raw
+  train_file: data/train.jsonl
+  val_file: data/val.jsonl
+  test_file: data/test.jsonl
+  eval_results_dir: data/eval_results
+  checkpoints_dir: checkpoints
+  outputs_dir: outputs
+  predictions_dir: outputs/predictions
+  metrics_dir: outputs/metrics
+  plots_dir: outputs/plots
+
+matrix_generation:
+  sizes: [3, 4, 5]
+  samples_per_size: 2000
+  distribution: uniform
+  uniform_low: -1.0
+  uniform_high: 1.0
+  determinant_abs_min: 0.05
+  condition_number_max: 50.0
+  max_generation_attempts_per_size: 20000
+  decimal_precision: 5
+  verify_inverse: true
+  residual_tolerance_gold: 1.0e-8
+
+dataset:
+  split_seed: 123
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
+  shuffle_before_split: true
+  include_metadata: true
+
+serialization:
+  include_matrix_size: true
+  input_header: "Matrix"
+  output_header: "Inverse"
+  row_separator: "\n"
+  value_separator: ", "
+  fixed_decimal_precision: 5
+  forbid_extra_text: true
+
+model:
+  provider: tinker
+  base_model: meta-llama/Llama-3.2-3B
+
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+
+optimizer:
+  type: adamw
+  lr: 1.0e-4
+  weight_decay: 0.01
+  betas: [0.9, 0.95]
+
+training:
+  batch_size: 16
+  max_seq_length: 1024
+  max_steps: 400
+  gradient_accumulation_steps: 1
+  warmup_ratio: 0.03
+  logging_steps: 10
+  eval_every_steps: 50
+  save_every_steps: 100
+
+inference:
+  max_new_tokens: 512
+  temperature: 0.0
+  top_p: 1.0
+  top_k: 50
+  repetition_penalty: 1.0
+
+evaluation:
+  strict_tolerance: 1.0e-2
+  medium_tolerance: 5.0e-2
+  loose_tolerance: 1.0e-1
+  residual_success_threshold: 5.0e-2
+  compute_left_residual: true
+  compute_right_residual: true
+  compute_mae: true
+  compute_mse: true
+  compute_frobenius_error: true
+  bucket_condition_numbers: [5, 10, 20, 50]
+
+experiment:
+  run_baseline_eval: true
+  run_finetune: true
+  run_posttrain_eval: true
+  compare_baseline_vs_posttrain: true
+  save_raw_predictions: true
+  save_per_example_metrics: true
+
+logging:
+  level: INFO
+  log_to_file: true
+  log_file: outputs/metrics/run.log
