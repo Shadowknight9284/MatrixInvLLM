@@ -50,5 +50,20 @@ Ran `python src/score_prediction.py` with mock LLM outputs and confirmed:
 - Exact 0.0 residuals and 0.0 MAE for gold-matching mock strings.
 - Correct categorization of examples into tolerance bands.
 
+## Phase 3: Scoring & Metrics - Baseline Complete
+Phase 3 establishes the end-to-end evaluation pipeline, integrating text-to-matrix parsing, scientific metrics, and Tinker-based baseline inference.
+
+### Changes Made
+- **`src/parse_prediction.py`**: Robust text-to-matrix parser with $(N \times N)$ validation.
+- **`src/score_prediction.py`**: Implementation of $MAE$, Frobenius distance, and Left/Right residuals.
+- **`src/inference.py`**: Tinker-first `ServiceClient` wrapper for sampling model outputs. Includes graceful fallback/mock for local verification.
+- **`src/evaluate_model.py`**: Complete dataset evaluation loop. Iterates over `test.jsonl`, aggregates results, and generates detailed/summary reports.
+
+### Verification Results
+Ran `python src/evaluate_model.py --limit 2` and confirmed:
+- The evaluation loop correctly calls inference and scoring for each example.
+- Aggregate metrics correctly compute pass rates for all tolerance bands.
+- Results are successfully persisted to `outputs/baseline/predictions.jsonl` and `outputs/baseline/metrics.json`.
+
 ## Next Steps
-The next part of Phase 3 will involve implementing the Tinker-first inference logic to establish the baseline performance on the `test.jsonl` dataset.
+Phase 4 will focus on implementing the Tinker-first LoRA training pipeline to fine-tune the model for the matrix inversion task.
