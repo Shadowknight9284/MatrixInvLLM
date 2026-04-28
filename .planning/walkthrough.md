@@ -19,8 +19,19 @@ Executed `python src/generate_matrices.py` and confirmed successful generation f
 
 All gold inverses meet the required tolerance ($10^{-8}$) by several orders of magnitude.
 
-## Next Steps
-Phase 2 will focus on serializing this numerical data into the strict CSV-style text format required for LLM training and establishing reproducible dataset splits.
+## Phase 2: Serialization & Splitting - Complete
+Phase 2 established the data conversion and splitting logic, effectively turning raw numeric matrices into training-ready JSONL files.
 
----
-*Walkthrough generated: 2026-04-28*
+### Changes Made
+- **`src/generate_matrices.py`**: Added `generate_raw_dataset` to orchestrate multi-size matrix generation.
+- **`src/serialize_dataset.py`**: Implemented strict text conversion using headers (`MatrixSize:`, `Matrix:`, `Inverse:`) and fixed decimal precision (5).
+- **`src/build_splits.py`**: Implemented deterministic shuffling and 80/10/10 splitting.
+
+### Verification Results
+Ran `python src/build_splits.py --test-run` and confirmed:
+- `data/train.jsonl`, `data/val.jsonl`, and `data/test.jsonl` were created.
+- JSON structure includes `input_text`, `target_text`, and numeric metadata (`determinant`, `condition_number`).
+- Text formatting exactly matches the project spec.
+
+## Next Steps
+Phase 3 will focus on implementation the evaluation engine (parser and scorers) and running the first baseline evaluation using the Tinker Sampling API on the `test.jsonl` set.
