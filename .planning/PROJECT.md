@@ -14,12 +14,13 @@ Demonstrate a clear performance delta between a baseline LLM and a LoRA-tuned LL
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ [DATA-01] Generate random dense n x n matrices (Phase 1).
+- ✓ [DATA-02] Compute gold inverses using NumPy/SciPy (Phase 1).
+- ✓ [DATA-03] Validate gold inverses using residual checks (Phase 1).
+- ✓ [DATA-04] Filter matrices by determinant and condition number (Phase 1).
 
 ### Active
 
-- [ ] [Phase 1] Generate synthetic dataset of invertible 3x3, 4x4, 5x5 matrices.
-- [ ] [Phase 1] Compute trusted inverses using NumPy/SciPy and perform residual validation.
 - [ ] [Phase 2] Serialize matrices into strict machine-readable CSV-style text.
 - [ ] [Phase 2] Build Reproducible train/val/test JSONL splits.
 - [ ] [Phase 3] Implement strict parser and numeric scoring (MAE, Residuals).

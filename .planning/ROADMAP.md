@@ -20,11 +20,10 @@ This 2-day MVP pipeline takes the project from synthetic data generation to a fu
   1. Matrices generated are dense, square, and invertible.
   2. Gold inverses pass residual checks ($||AX - I|| < 10^{-8}$).
   3. `train.jsonl`, `val.jsonl`, and `test.jsonl` files are produced with strict formatting.
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: Implement `src/utils.py` and `src/generate_matrices.py`.
-- [ ] 01-02: Implement `src/serialize_dataset.py` and `src/build_splits.py`.
+- [x] 01-01: Implement `src/utils.py` and `src/generate_matrices.py`.
 
 ### Phase 2: Numeric Scoring & Baseline Eval
 **Goal**: Establish a baseline performance level and implement robust evaluation logic.
@@ -69,7 +68,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/2 | Not started | - |
+| 1. Foundation | 1/1 | Complete | 2026-04-28 |
 | 2. Eval & Baseline | 0/2 | Not started | - |
 | 3. LoRA Training | 0/1 | Not started | - |
 | 4. Orchestration | 0/1 | Not started | - |
