@@ -1,7 +1,7 @@
 # State: MatrixInverse-LLM
 
 **Current Phase**: Phase 3 (Numeric Scoring & Baseline Eval)
-**Status**: Datasets Prepared
+**Status**: Scoring Engine Ready
 **Health**: 🟢 Healthy
 
 ## Recent Activity
@@ -9,13 +9,14 @@
 - Defined requirements and roadmap for MVP.
 - **Phase 1 Complete**: Implemented `src/utils.py` and `src/generate_matrices.py`.
 - **Phase 2 Complete**: Implemented `src/serialize_dataset.py` and `src/build_splits.py`.
-- Generated `train.jsonl`, `val.jsonl`, and `test.jsonl` with strict text formatting.
+- **Phase 3 (Part 1) Complete**: Implemented `src/parse_prediction.py` and `src/score_prediction.py`.
+- Verified scoring logic with mock LLM outputs and residual calculations ($residual = 0$ for gold).
 
 ## Blockers
 - None.
 
 ## Next Steps
-- Run `/gsd-plan-phase 3` to start Phase 3 (Scoring & Baseline).
+- Run `03-02` to implement Tinker baseline inference.
 
 ---
 *Last updated: 2026-04-28*
