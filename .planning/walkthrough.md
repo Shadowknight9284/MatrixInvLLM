@@ -33,5 +33,22 @@ Ran `python src/build_splits.py --test-run` and confirmed:
 - JSON structure includes `input_text`, `target_text`, and numeric metadata (`determinant`, `condition_number`).
 - Text formatting exactly matches the project spec.
 
+## Phase 3: Scoring & Metrics - Parser/Scoring Complete
+Phase 3 (Part 1) implemented the evaluation engine, providing the necessary tools to quantify LLM performance.
+
+### Changes Made
+- **`src/parse_prediction.py`**: Implemented a robust regex-based float extractor that handles scientific notation and reshapes text into $N \times N$ matrices with shape validation.
+- **`src/score_prediction.py`**: Implemented:
+    - Distance metrics: MAE, MSE, Frobenius norm distance.
+    - Functional metrics: Left residual ($||I - AX||_F$) and Right residual ($||I - XA||_F$).
+    - Tolerance checking against strict/medium/loose bands.
+
+### Verification Results
+Ran `python src/score_prediction.py` with mock LLM outputs and confirmed:
+- Successful parsing of multi-line CSV strings.
+- Detection of shape mismatches (e.g., 3 values for a 3x3 matrix).
+- Exact 0.0 residuals and 0.0 MAE for gold-matching mock strings.
+- Correct categorization of examples into tolerance bands.
+
 ## Next Steps
-Phase 3 will focus on implementation the evaluation engine (parser and scorers) and running the first baseline evaluation using the Tinker Sampling API on the `test.jsonl` set.
+The next part of Phase 3 will involve implementing the Tinker-first inference logic to establish the baseline performance on the `test.jsonl` dataset.
