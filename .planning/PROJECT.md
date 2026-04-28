@@ -18,11 +18,12 @@ Demonstrate a clear performance delta between a baseline LLM and a LoRA-tuned LL
 - ✓ [DATA-02] Compute gold inverses using NumPy/SciPy (Phase 1).
 - ✓ [DATA-03] Validate gold inverses using residual checks (Phase 1).
 - ✓ [DATA-04] Filter matrices by determinant and condition number (Phase 1).
+- ✓ [SER-01] Serialize matrices into strict CSV-style text format (Phase 2).
+- ✓ [SER-02] Create reproducible train, val, and test splits (Phase 2).
+- ✓ [SER-03] Export splits as JSONL for Tinker ingestion (Phase 2).
 
 ### Active
 
-- [ ] [Phase 2] Serialize matrices into strict machine-readable CSV-style text.
-- [ ] [Phase 2] Build Reproducible train/val/test JSONL splits.
 - [ ] [Phase 3] Implement strict parser and numeric scoring (MAE, Residuals).
 - [ ] [Phase 4] Implement Tinker-first inference client for baseline sampling.
 - [ ] [Phase 4] Run baseline evaluation on the test set.

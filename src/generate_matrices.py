@@ -89,6 +89,23 @@ def generate_stable_example(n, config):
     
     raise RuntimeError(f"Failed to generate stable {n}x{n} matrix after {max_attempts} attempts")
 
+def generate_raw_dataset(sizes, samples_per_size, config):
+    """
+    Generate the requested number of stable examples for each size.
+    """
+    dataset = []
+    for size in sizes:
+        logger.info(f"Generating {samples_per_size} examples for size {size}x{size}...")
+        for i in range(samples_per_size):
+            try:
+                example = generate_stable_example(size, config)
+                example["id"] = f"{size}_{i}"
+                example["matrix_size"] = size
+                dataset.append(example)
+            except RuntimeError as e:
+                logger.error(f"Error at size {size}, index {i}: {e}")
+    return dataset
+
 if __name__ == "__main__":
     # Internal Verification for Phase 1
     config = load_config()
