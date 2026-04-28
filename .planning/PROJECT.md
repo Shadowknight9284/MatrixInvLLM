@@ -21,14 +21,16 @@ Demonstrate a clear performance delta between a baseline LLM and a LoRA-tuned LL
 - ✓ [SER-01] Serialize matrices into strict CSV-style text format (Phase 2).
 - ✓ [SER-02] Create reproducible train, val, and test splits (Phase 2).
 - ✓ [SER-03] Export splits as JSONL for Tinker ingestion (Phase 2).
+- ✓ [EVAL-01] Text-to-matrix parsing (Phase 3).
+- ✓ [EVAL-02] Residual and distance metrics computation (Phase 3).
+- ✓ [EVAL-03] Tolerance-based pass/fail categorization (Phase 3).
+- ✓ [TINK-01] Tinker Client initialization (Phase 3).
+- ✓ [TINK-02] Baseline inference on test set (Phase 3).
 
 ### Active
 
-- [ ] [Phase 3] Implement strict parser and numeric scoring (MAE, Residuals).
-- [ ] [Phase 4] Implement Tinker-first inference client for baseline sampling.
-- [ ] [Phase 4] Run baseline evaluation on the test set.
-- [ ] [Phase 5] Implement Tinker-first LoRA training client and run fine-tuning.
-- [ ] [Phase 6] Run post-train evaluation and generate comparison report.
+- [ ] [Phase 4] Implement Tinker-first LoRA training client and run fine-tuning.
+- [ ] [Phase 5] Run post-train evaluation and generate comparison report.
 
 ### Out of Scope
 

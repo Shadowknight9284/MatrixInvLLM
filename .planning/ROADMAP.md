@@ -47,11 +47,11 @@ Plans:
   1. Model responses can be parsed into numeric NumPy arrays reliably.
   2. Evaluation reports include MAE and Residual metrics.
   3. A baseline evaluation run using Tinker `SamplingClient` completes on the test set.
-**Plans**: 1 plan completed (Scoring Engine), 1 plan pending (Baseline Eval)
+**Plans**: 2 plans
 
 Plans:
 - [x] 03-01: Implement `src/parse_prediction.py` and `src/score_prediction.py`.
-- [ ] 03-02: Implement `src/inference.py` (Tinker) and run baseline evaluation.
+- [x] 03-02: Implement `src/inference.py` (Tinker) and run baseline evaluation.
 
 ### Phase 4: Tinker LoRA Training
 **Goal**: Fine-tune the model using the Tinker API's LoRA primitives.
@@ -84,7 +84,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 1/1 | Complete | 2026-04-28 |
 | 2. Serialization | 1/1 | Complete | 2026-04-28 |
-| 3. Eval & Baseline | 1/2 | In progress | - |
+| 3. Eval & Baseline | 2/2 | Complete | 2026-04-28 |
 | 4. LoRA Training | 0/1 | Not started | - |
 | 5. Orchestration | 0/1 | Not started | - |
 
