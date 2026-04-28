@@ -7,23 +7,25 @@
 ## Phase Boundary
 This phase focuses on the evaluation engine. It implements the logic to convert raw LLM text output back into NumPy matrices and compute all required scientific metrics.
 
-- [ ] `src/parse_prediction.py`
-- [ ] `src/score_prediction.py`
+- [x] `src/parse_prediction.py` (Part 1)
+- [x] `src/score_prediction.py` (Part 1)
+- [ ] `src/inference.py` (Part 2)
+- [ ] `src/evaluate_model.py` (Part 2 - Baseline portion)
 </domain>
 
 <decisions>
 ## Implementation Decisions
 
-### Parsing Logic
-- **Decision 1**: Handle malformed outputs by searching for the "Inverse:" header or just searching for rows of floats.
-- **Decision 2**: Enforce exactly `matrix_size` rows and columns.
-- **Decision 3**: Store parsing state: `parse_success` (bool), `is_correct_shape` (bool).
+### Tinker Integration
+- **Decision 8**: Use `tinker.ServiceClient()` for all API interactions.
+- **Decision 9**: Use the base model (e.g., Llama 3.2 3B) as configured in `config.yaml`.
+- **Decision 10**: Implement a `SamplingClient` wrapper for robust inference.
 
-### Scoring Metrics
-- **Decision 4**: Compute element-wise MAE and MSE.
-- **Decision 5**: Compute Frobenius norm of distance $||X_{pred} - X_{gold}||_F$.
-- **Decision 6**: Compute left and right residuals ($||I - AX||_F$, $||I - XA||_F$).
-- **Decision 7**: Pass/Fail against strict (1e-5), medium (1e-3), and loose (1e-1) tolerances from `evaluation` section of `config.yaml`.
+### Baseline Evaluation
+- **Decision 11**: Evaluation loop iterates over `data/test.jsonl`.
+- **Decision 12**: Per-example metrics stored in a list for aggregation.
+- **Decision 13**: Final report includes aggregate pass rates by tolerance band and matrix size.
+- **Decision 14**: Save raw LLM responses alongside numeric scores for auditing.
 
 ### the agent's Discretion
 - Regex patterns for float extraction.
