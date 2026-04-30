@@ -4,8 +4,9 @@ import logging
 from tqdm import tqdm
 import numpy as np
 from src.utils import load_config, setup_logging, set_seed
-from src.inference import sample_model
+from src.inference import sample_model_with_diagnostics
 from src.score_prediction import score_example
+from src.failure_classifier import classify_failure, summarize_failures
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def run_evaluation(dataset_path, output_dir, config, limit=None):
     for i, ex in enumerate(tqdm(records, desc="Evaluating")):
         # Inference
         prompt = ex["input_text"]
-        pred_text = sample_model(prompt, config)
+        pred_text, diag = sample_model_with_diagnostics(prompt, config)
         
         # Scoring
         # ex["matrix"] and ex["inverse"] were saved as lists in Phase 2, convert to numpy
@@ -50,6 +51,14 @@ def run_evaluation(dataset_path, output_dir, config, limit=None):
             config
         )
         
+        failure_mode = classify_failure(
+            raw_text=diag["raw_text"],
+            cleaned_text=pred_text,
+            parse_meta=scores,
+            scores=scores,
+            stop_reason=diag.get("stop_reason", "normal"),
+        )
+        
         # Store result
         result = {
             "id": ex["id"],
@@ -57,12 +66,17 @@ def run_evaluation(dataset_path, output_dir, config, limit=None):
             "prompt": prompt,
             "prediction": pred_text,
             "target": ex["target_text"],
-            "scores": scores
+            "scores": scores,
+            "failure_mode": failure_mode.value if hasattr(failure_mode, 'value') else str(failure_mode)
         }
+        if config.get("diagnostics", {}).get("save_inference_diagnostics", True):
+            result["inference_diagnostics"] = diag
+            
         results.append(result)
         
     # Aggregate
     agg_report = aggregate_results(results, config)
+    agg_report["failure_mode_breakdown"] = summarize_failures(results)
     
     # Save
     save_evaluation_results(results, agg_report, output_dir)

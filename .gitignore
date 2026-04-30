@@ -1,0 +1,8 @@
+.env
+.planning/*
+docs/*
+src/__pycache__/*
+src/*.pyc
+.venv/*
+.claude/*
+data/*

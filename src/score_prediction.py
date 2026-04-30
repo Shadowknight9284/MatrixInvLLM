@@ -44,11 +44,17 @@ def check_tolerances(residual_norm, config):
     Check if the residual norm passes at different tolerance levels.
     """
     eval_cfg = config.get("evaluation", {})
-    tolerances = eval_cfg.get("tolerance_bands", {
-        "strict": 1e-5,
-        "medium": 1e-3,
-        "loose": 1e-1
-    })
+    
+    # Try to get from specific keys first (Phase 5 alignment)
+    tolerances = {
+        "strict": eval_cfg.get("strict_tolerance", 1e-5),
+        "medium": eval_cfg.get("medium_tolerance", 1e-3),
+        "loose": eval_cfg.get("loose_tolerance", 1e-1)
+    }
+    
+    # Fallback to tolerance_bands if explicitly defined
+    if "tolerance_bands" in eval_cfg:
+        tolerances.update(eval_cfg["tolerance_bands"])
     
     results = {}
     for level, tol in tolerances.items():
@@ -59,37 +65,51 @@ def check_tolerances(residual_norm, config):
 def score_example(pred_text, gold_matrix, a_matrix, matrix_size, config):
     """
     Full scoring pipeline for a single example.
+
+    Returns a flat dict with:
+      parse_success, is_correct_shape, extracted_values_count,
+      mae, mse, frobenius_dist, max_abs_error,
+      residual_left, residual_right, residual_max,
+      pass_strict, pass_medium, pass_loose
     """
     from src.parse_prediction import parse_to_matrix
-    
+
     matrix, parse_meta = parse_to_matrix(pred_text, matrix_size)
-    
+
     full_metrics = {
         "parse_success": parse_meta["parse_success"],
         "is_correct_shape": parse_meta["is_correct_shape"],
-        "extracted_values_count": parse_meta["extracted_values_count"]
+        "extracted_values_count": parse_meta["extracted_values_count"],
     }
-    
+
     if not parse_meta["is_correct_shape"]:
-        # Assign worst-case scores or NaNs if shape is wrong
+        # Fill all numeric fields with sentinel values for schema consistency
         full_metrics.update({
             "mae": None,
+            "mse": None,
+            "frobenius_dist": None,
+            "max_abs_error": None,
+            "residual_left": None,
+            "residual_right": None,
             "residual_max": None,
             "pass_strict": False,
             "pass_medium": False,
-            "pass_loose": False
+            "pass_loose": False,
         })
         return full_metrics
 
-    # Compute numeric scores
+    # Shape is valid — run full numeric scoring
+    logger.debug(
+        f"score_example: valid {matrix_size}x{matrix_size} prediction — computing numerics."
+    )
     dist_metrics = compute_distance_metrics(matrix, gold_matrix)
     res_metrics = compute_residual_metrics(matrix, a_matrix)
     tol_results = check_tolerances(res_metrics["residual_max"], config)
-    
+
     full_metrics.update(dist_metrics)
     full_metrics.update(res_metrics)
     full_metrics.update(tol_results)
-    
+
     return full_metrics
 
 if __name__ == "__main__":

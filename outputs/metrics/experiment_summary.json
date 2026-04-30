@@ -1,0 +1,89 @@
+{
+  "baseline": {
+    "total_count": 8,
+    "parse_success_rate": 0.0,
+    "is_correct_shape_rate": 0.0,
+    "by_size": {
+      "3": {
+        "count": 8,
+        "parse_success_rate": 0.0,
+        "pass_rate_strict": 0.0,
+        "pass_rate_medium": 0.0,
+        "pass_rate_loose": 0.0
+      }
+    },
+    "pass_rate_strict": 0.0,
+    "pass_rate_medium": 0.0,
+    "pass_rate_loose": 0.0,
+    "failure_mode_breakdown": {
+      "total_count": 8,
+      "counts": {
+        "EOS_ONLY": 8,
+        "PROMPT_ECHO": 0,
+        "REPEATED_BLOCK_LOOP": 0,
+        "SHAPE_FORMAT": 0,
+        "NUMERICALLY_WRONG": 0,
+        "SUCCESS": 0
+      },
+      "percentages": {
+        "EOS_ONLY": 1.0,
+        "PROMPT_ECHO": 0.0,
+        "REPEATED_BLOCK_LOOP": 0.0,
+        "SHAPE_FORMAT": 0.0,
+        "NUMERICALLY_WRONG": 0.0,
+        "SUCCESS": 0.0
+      }
+    }
+  },
+  "finetuned": {
+    "total_count": 8,
+    "parse_success_rate": 0.875,
+    "is_correct_shape_rate": 0.875,
+    "by_size": {
+      "3": {
+        "count": 8,
+        "parse_success_rate": 0.875,
+        "pass_rate_strict": 0.0,
+        "pass_rate_medium": 0.0,
+        "pass_rate_loose": 0.0
+      }
+    },
+    "pass_rate_strict": 0.0,
+    "pass_rate_medium": 0.0,
+    "pass_rate_loose": 0.0,
+    "failure_mode_breakdown": {
+      "total_count": 8,
+      "counts": {
+        "EOS_ONLY": 0,
+        "PROMPT_ECHO": 0,
+        "REPEATED_BLOCK_LOOP": 0,
+        "SHAPE_FORMAT": 1,
+        "NUMERICALLY_WRONG": 7,
+        "SUCCESS": 0
+      },
+      "percentages": {
+        "EOS_ONLY": 0.0,
+        "PROMPT_ECHO": 0.0,
+        "REPEATED_BLOCK_LOOP": 0.0,
+        "SHAPE_FORMAT": 0.125,
+        "NUMERICALLY_WRONG": 0.875,
+        "SUCCESS": 0.0
+      }
+    }
+  },
+  "deltas": {
+    "parse_success_rate": 0.875,
+    "is_correct_shape_rate": 0.875,
+    "pass_rate_strict": 0.0,
+    "pass_rate_medium": 0.0,
+    "pass_rate_loose": 0.0,
+    "by_size": {
+      "3": {
+        "parse_success_rate": 0.875,
+        "pass_rate_strict": 0.0,
+        "pass_rate_medium": 0.0,
+        "pass_rate_loose": 0.0
+      }
+    }
+  }
+}

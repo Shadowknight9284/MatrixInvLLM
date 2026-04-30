@@ -1,54 +1,143 @@
+from __future__ import annotations
+
 import re
 import numpy as np
-import logging
+from typing import Any
 
-logger = logging.getLogger(__name__)
+_NUMBER_RE = r'[-+]?(?:\d+\.\d+|\d+|\.\d+)(?:[eE][-+]?\d+)?'
+_ROW_RE = re.compile(rf'^\s*{_NUMBER_RE}\s*(?:,\s*{_NUMBER_RE}\s*)*$')
+_HEADER_RE = re.compile(r'^\s*inverse\s*:\s*$', re.IGNORECASE)
+_INLINE_HEADER_RE = re.compile(r'(?i)inverse\s*:')
+_SPECIAL_TOKENS = [
+    '<|begin_of_text|>',
+    '<|end_of_text|>',
+    '<s>',
+    '</s>',
+]
 
-def extract_floats(text):
-    """
-    Extract all floating point numbers from a text string.
-    Handles scientific notation as well.
-    """
-    # Regex for floats: handles -1.23, 10, .5, 1e-5, 1.2E+10
-    pattern = r"[-+]?\d*\.\d+(?:[eE][-+]?\d+)?|[-+]?\d+(?:[eE][-+]?\d+)?"
-    matches = re.finditer(pattern, text)
-    floats = [float(m.group(0)) for m in matches]
-    return floats
 
-def parse_to_matrix(text, size):
-    """
-    Attempt to parse text into a square matrix of a given size.
-    Returns (matrix, metadata).
-    """
-    metadata = {
-        "parse_success": False,
-        "is_correct_shape": False,
-        "raw_text": text,
-        "extracted_values_count": 0
-    }
-    
-    # Pre-processing: Look for headers like "Inverse:" to narrow the search?
-    # For now, let's just extract all floats and see if the count matches.
-    # The user might have preamble or postamble.
-    
-    values = extract_floats(text)
-    metadata["extracted_values_count"] = len(values)
-    
-    expected_count = size * size
-    
-    if len(values) == 0:
-        return None, metadata
-    
-    metadata["parse_success"] = True
-    
-    if len(values) != expected_count:
-        logger.debug(f"Shape mismatch: expected {expected_count} values, got {len(values)}")
-        return None, metadata
-    
+def normalize_prediction_text(text: str) -> str:
+    if text is None:
+        return ''
+    normalized = str(text)
+    for token in _SPECIAL_TOKENS:
+        normalized = normalized.replace(token, '\n')
+    normalized = normalized.replace('\r\n', '\n').replace('\r', '\n')
+    normalized = _INLINE_HEADER_RE.sub('\nInverse:\n', normalized)
+    normalized = re.sub(r'\n{3,}', '\n\n', normalized)
+    return normalized.strip()
+
+
+def is_numeric_row(line: str) -> bool:
+    return bool(_ROW_RE.match(line.strip()))
+
+
+def parse_numeric_row(line: str) -> list[float] | None:
+    line = line.strip()
+    if not is_numeric_row(line):
+        return None
+    parts = [p.strip() for p in line.split(',')]
     try:
-        matrix = np.array(values).reshape((size, size))
-        metadata["is_correct_shape"] = True
-        return matrix, metadata
-    except Exception as e:
-        logger.error(f"Error reshaping matrix: {e}")
-        return None, metadata
+        return [float(p) for p in parts]
+    except ValueError:
+        return None
+
+
+def extract_first_inverse_matrix(normalized: str, matrix_size: int) -> list[list[float]] | None:
+    """
+    Parse a pre-normalized string and return the first complete n×n numeric
+    block that follows an 'Inverse:' header.
+
+    Stops collecting rows on any of:
+      - blank line after at least one row has been collected
+      - second 'Inverse:' header
+      - non-numeric line once row collection has started
+      - numeric row with wrong column count
+    """
+    lines = normalized.splitlines()
+
+    started = False
+    rows: list[list[float]] = []
+
+    for raw in lines:
+        line = raw.strip()
+        if not started:
+            if _HEADER_RE.match(line):
+                started = True
+            continue
+
+        if not line:
+            if rows:
+                break
+            continue
+
+        if _HEADER_RE.match(line):
+            break
+
+        parsed = parse_numeric_row(line)
+        if parsed is None:
+            if rows:
+                break
+            continue
+
+        if len(parsed) != matrix_size:
+            break
+
+        rows.append(parsed)
+        if len(rows) == matrix_size:
+            return rows
+
+    return None
+
+
+def parse_prediction(prediction: str, matrix_size: int) -> dict[str, Any]:
+    """
+    Normalize `prediction` and extract the first valid n×n inverse matrix.
+
+    Returns a dict with:
+      parse_success         bool
+      is_correct_shape      bool
+      extracted_values_count int
+      parsed_matrix         list[list[float]] | None
+      normalized_text       str
+    """
+    normalized = normalize_prediction_text(prediction)
+    matrix = extract_first_inverse_matrix(normalized, matrix_size)
+
+    if matrix is None:
+        return {
+            'parse_success': False,
+            'is_correct_shape': False,
+            'extracted_values_count': 0,
+            'parsed_matrix': None,
+            'normalized_text': normalized,
+        }
+
+    return {
+        'parse_success': True,
+        'is_correct_shape': True,   # guaranteed by extraction logic
+        'extracted_values_count': matrix_size * matrix_size,
+        'parsed_matrix': matrix,
+        'normalized_text': normalized,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compatibility shim — score_prediction.py imports this signature
+# ---------------------------------------------------------------------------
+
+def parse_to_matrix(text: str, size: int) -> tuple[np.ndarray | None, dict[str, Any]]:
+    """
+    Legacy interface used by score_prediction.py.
+    Delegates to parse_prediction and converts the list matrix to ndarray.
+    """
+    result = parse_prediction(text, size)
+    meta = {
+        'parse_success': result['parse_success'],
+        'is_correct_shape': result['is_correct_shape'],
+        'extracted_values_count': result['extracted_values_count'],
+        'raw_text': text,
+    }
+    if result['parsed_matrix'] is None:
+        return None, meta
+    return np.array(result['parsed_matrix'], dtype=float), meta

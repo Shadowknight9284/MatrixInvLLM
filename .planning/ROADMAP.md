@@ -63,7 +63,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04-01: Implement `src/train_lora.py` and execute the single-run fine-tuning job.
+- [x] 04-01: Implement `src/train_lora.py` and execute the single-run fine-tuning job.
 
 ### Phase 5: Final Comparison & Orchestration
 **Goal**: Orchestrate the full pipeline and quantify improvement post-training.
@@ -85,8 +85,8 @@ Plans:
 | 1. Foundation | 1/1 | Complete | 2026-04-28 |
 | 2. Serialization | 1/1 | Complete | 2026-04-28 |
 | 3. Eval & Baseline | 2/2 | Complete | 2026-04-28 |
-| 4. LoRA Training | 0/1 | Not started | - |
-| 5. Orchestration | 0/1 | Not started | - |
+| 4. LoRA Training | 1/1 | Complete | 2026-04-28 |
+| 5. Orchestration | 1/1 | Complete | 2026-04-28 |
 
 ---
 *Roadmap defined: 2026-04-28*
