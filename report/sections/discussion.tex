@@ -1,67 +1,32 @@
 \section{Discussion}
 \label{sec:discussion}
 
-\subsection{What the Results Reveal About LLM Arithmetic Reasoning}
-
-Our findings contribute to a growing body of evidence on LLM limitations in precise arithmetic reasoning, but with a more nuanced picture than a simple pass/fail verdict.
-
-The baseline result---100\% syntactic success, 0\% functional success---confirms that LLMs can learn output \emph{format} from pretraining without any task-specific training. The model emits well-formed inverse-shaped text because it has seen similar patterns, not because it has computed anything.
-
-The fine-tuned result is more revealing. The model did \emph{not} simply learn the same format more reliably. Instead, it learned something genuinely new about inverse-like numeric structure:
-
-\begin{itemize}
-    \item The 14$\times$ improvement in determinant ratio (0.045 $\to$ 0.639) indicates the model learned to modulate its output's scale relative to the input's scale, consistent with implicit knowledge that the inverse's determinant is the reciprocal of the input's determinant.
-    \item The 29-point gain in sign agreement (0.503 $\to$ 0.795) indicates the model is learning which entries of the true inverse are positive versus negative---a genuine input-output dependency, since sign patterns depend on the specific values of $A$.
-    \item The 30-point reduction in relative Frobenius error indicates predictions closer to the true inverse, not just closer to a plausible format.
-    \item The increase in copy distances ($\|X - A\|_F$ grew from 1.45 to 3.18) confirms the model is not simply echoing the input; it is generating substantially different values.
-\end{itemize}
-
-Together, these metrics indicate that supervised fine-tuning did induce some dependency between input and output at the level of coarse numeric structure. The model appears to have learned \emph{partial inverse-like patterns}: sign, approximate scale, and general numeric character, but not the precise multi-step algebraic constraint $AX = I$.
+The revised results complicate any simple interpretation. It is not accurate to say that the model learned only output formatting and no mathematical relationship between input and output. Several diagnostics improved in ways that suggest the fine-tuned model captured broad numerical regularities associated with the inverse, including scale, sign structure, and reduced similarity to the input matrix itself. At the same time, those improvements remain insufficient for task success. Matrix inversion is an unforgiving functional target: small entrywise deviations can yield large residual errors, and coarse resemblance does not guarantee algebraic correctness. The results point to a gap between approximate structural alignment and exact functional computation.
 
 \subsection{Why the Functional Gap Persists}
 
-Despite measurable structural improvement, no output satisfies $\|AX - I\|_F < 10^{-1}$. Several factors likely contribute:
+Several plausible, non-exclusive explanations may account for the remaining gap. These explanations are not fully separable without further ablation experiments.
 
 \begin{enumerate}
-    \item \textbf{Insufficient training signal}: 800 examples and 800 steps may be insufficient for a 3-billion-parameter model to generalize a precise function from noisy weight updates. Matrix inversion requires entrywise precision across all 4 or 9 output values; a single misestimated entry can cause large residuals.
+    \item \textbf{Insufficient training signal.} 800 examples and 800 steps may be insufficient for a 3-billion-parameter model to generalize a precise function. Matrix inversion requires entrywise precision across all 4 or 9 output values; a small error in any entry can propagate into a large residual.
 
-    \item \textbf{Representation mismatch}: LLMs operate on token sequences, not numerical values. Each floating-point number is tokenized as a sequence of characters without any intrinsic numeric semantics. The model must implicitly learn to ``parse'' input tokens as numbers, compute interactions, and ``render'' output tokens---all within a continuous embedding space that was not designed for this purpose.
+    \item \textbf{Representation mismatch.} LLMs process token sequences without intrinsic numeric semantics. Each floating-point value is tokenized as a sequence of character-level tokens. The model must implicitly treat these as numeric quantities and compose them correctly---a form of reasoning not supported by standard language modeling objectives.
 
-    \item \textbf{Lack of intermediate computation}: Matrix inversion by Gaussian elimination requires structured intermediate steps. Supervised fine-tuning on final ($A$, $A^{-1}$) pairs provides no signal about these intermediate steps, forcing the model to learn a direct mapping that may exceed what a small model can approximate.
+    \item \textbf{Absence of intermediate computation.} Matrix inversion by Gaussian elimination proceeds through structured intermediate steps. Supervised fine-tuning on final ($A$, $A^{-1}$) pairs provides no signal about these steps, requiring the model to learn a direct input-to-output mapping that may be beyond what a small model can approximate from examples alone.
 
-    \item \textbf{Decoding instability as a bottleneck}: The 40\% parse failure rate means even evaluable outputs are a \emph{selected} subset---likely those where the model happened to produce shorter, more structured outputs. The improvement in diagnostics among parseable examples may be partly a selection artifact. It is possible the true distribution of fine-tuned outputs is bimodal: some are structurally improving, while others have entirely collapsed into repetition loops.
+    \item \textbf{Selection effects in Level 2 diagnostics.} The structural improvements reported in Section~\ref{sec:experiments} are measured over the 60\% of fine-tuned outputs that are parseable. These may not be representative of the full fine-tuned distribution: outputs that terminated cleanly enough to be parsed may systematically differ from those that looped or became malformed. The apparent improvements could be overstated if loop-prone examples would have shown weaker numeric alignment.
 \end{enumerate}
 
-\subsection{Decoding Instability as a First-Class Finding}
+\subsection{Decoding Instability}
 
-The generation reliability drop---from 100\% to 60\% parseable---is not a peripheral implementation detail. It is a central result. Fine-tuning caused the model to lose its ability to produce clean, length-controlled outputs on a majority of $3 \times 3$ examples, with every output hitting the 4{,}096-token budget.
+Format instability remained a primary bottleneck in this evaluation. All 100 fine-tuned outputs reached the 4{,}096-token inference ceiling, compared to typical baseline outputs of 52--55 tokens. The model lost clean length-controlled termination on every example after fine-tuning.
 
-This suggests that the LoRA updates that improved numeric structure also destabilized the model's autoregressive termination behavior. The model may be attempting more ``computation'' in its output but getting caught in degenerate loops when that computation doesn't converge to a clean termination state.
+One possible explanation is that LoRA updates pushed the model toward generating more structured numeric content, and this effort leads to over-generation when the model cannot converge to a well-formed output---producing repeated blocks or fragmented shapes. This explanation is speculative; the precise cause is not established by the current evaluation.
 
-From a systems perspective, a model that is more numerically aware but less generatively reliable is not obviously better than the baseline. The right metric for deployment is not just numeric accuracy on parseable outputs, but accuracy on \emph{all} outputs. By that measure, the fine-tuned model is worse: 0\% success vs.\ 0\% success with significantly more wasted computation.
+The practical consequence is significant. A model that shows improved numeric structure among parseable outputs, but generates parseable output on only 60\% of examples, provides no net improvement in aggregate correctness (0 successes in both cases). Format instability must be addressed before the numeric improvements are meaningful in any applied sense.
 
-\subsection{Implications for the Broader Question}
+\subsection{Interpretation}
 
-Our experiment probes a specific version of a general question: can LLMs learn to compute functions that humans find computationally demanding, purely from (input, output) example pairs? For matrix inversion, the answer at this scale is \emph{not yet}. But the diagnostic structure of the failure provides direction:
+A useful summary is to distinguish three levels of competence. First, a model may produce text that is syntactically well formed. Second, it may produce numbers that reflect some broad properties of the target distribution. Third, it may produce outputs that satisfy the mathematical function being asked. In this study, LoRA fine-tuning appears to improve the second level without reliably achieving the third, while also degrading robustness at the first level for 40\% of test examples. This result is informative: it demonstrates that the gap between structural resemblance and functional correctness is real and not closed by this training approach.
 
-\begin{itemize}
-    \item The model is not stuck at zero---it is learning something. The path forward likely involves more training data, more steps, or structural changes to the supervision signal.
-    \item Format and reliability are prerequisites for numeric learning. The decoding instability must be resolved before further numeric gains can be realized.
-    \item The results are consistent with a hypothesis of \emph{capacity limitation}, not a fundamental impossibility: a sufficiently large model with sufficiently structured supervision might succeed where this small model fails.
-\end{itemize}
-
-\subsection{Limitations}
-
-\begin{enumerate}
-    \item \textbf{Single model and architecture}: Llama-3.2-3B with LoRA. Larger models or different adapter configurations may behave differently.
-
-    \item \textbf{No hyperparameter search}: We use one configuration. Different ranks, learning rates, or training lengths may substantially change outcomes.
-
-    \item \textbf{Fixed output format}: The serialization format may be suboptimal. A simpler format (e.g., space-separated values without headers) might reduce formatting failures.
-
-    \item \textbf{Parser brittleness}: Some outputs classified as \texttt{SHAPE\_FORMAT} or \texttt{REPEATED\_BLOCK\_LOOP} may contain valid partial matrices; our parser may be more conservative than necessary. True numeric performance may be slightly underestimated.
-
-    \item \textbf{Small matrix scale}: $3 \times 3$ is a restricted domain. Behavior on larger matrices, where the inverse is harder to approximate, is unknown.
-
-    \item \textbf{No intermediate supervision}: We provide only final ($A$, $A^{-1}$) pairs. Chain-of-thought or step-by-step computation supervision might substantially change the model's learning trajectory.
-\end{enumerate}
+The results are compatible with a capacity-limitation interpretation---a sufficiently large model or more targeted training might succeed---but they do not establish it. The failure could equally reflect a more fundamental limitation of text-based arithmetic supervision.

@@ -1,0 +1,14 @@
+\section{Limitations}
+\label{sec:limitations}
+
+Several limitations constrain the strength of the conclusions drawn here.
+
+Mathematical competence is evaluated through text generation, so it is entangled with decoding behavior and output formatting. A model that partially captures the inverse distribution can still appear to fail if generation becomes unstable---and conversely, a model that generates parseable text reliably may score well on syntactic checks while remaining numerically wrong. Separating these failure modes requires the kind of diagnostic suite used here, but the suite itself depends on a parser that may be conservative.
+
+The study remains small in scale. One training configuration was evaluated in a single run without repeated seeds or multi-run variance analysis. Reported metrics reflect one realized outcome; run-to-run variance is uncharacterized. The chosen hyperparameters---rank, learning rate, number of steps---were not tuned, and different settings may produce meaningfully different outcomes.
+
+The output representation may itself be a bottleneck. Autoregressive text generation is a noisy interface for an object that is naturally structured as a matrix. Strict header requirements and fixed decimal precision may cause valid outputs to be classified as format failures. A simpler serialization format could reduce format-induced failures and change the observed reliability profile.
+
+All Level 2 structural diagnostics are conditional on parseable outputs. The 60\% of fine-tuned outputs that are parseable may not be representative of the full fine-tuned distribution. Direct comparison of Level 2 improvements against the 100\% parseable baseline is therefore not straightforward.
+
+These limitations do not nullify the main finding, but they do narrow its scope. The current evidence supports claims about partial structural learning under a difficult textual interface in one specific experimental configuration; it does not establish that the model can perform reliable inverse computation in a broader sense.

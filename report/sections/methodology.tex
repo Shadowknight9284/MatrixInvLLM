@@ -74,7 +74,7 @@ The split is randomized across both matrix sizes jointly; it is not stratified s
     \item Infrastructure: Tinker SDK with async pipelining
 \end{itemize}
 
-\textbf{Inference}: Greedy decoding (temperature = 0.0). Stop sequences include \verb|<|eot_id|>|, \verb|\nInverse:|, and \verb|\n\nInverse:|, which terminate generation when the model begins a second inverse block. The inference service imposed an effective ceiling of 4{,}096 tokens; as discussed in~\S\ref{sec:experiments}, all fine-tuned model outputs reached this ceiling. No hyperparameter search was performed; this is an intentionally minimal configuration.
+\textbf{Inference}: Greedy decoding (temperature = 0.0). Stop sequences include \texttt{<|eot\_id|>}, \verb|\nInverse:|, and \verb|\n\nInverse:|, which terminate generation when the model begins a second inverse block. The inference service imposed an effective ceiling of 4{,}096 tokens; as discussed in~\S\ref{sec:experiments}, all fine-tuned model outputs reached this ceiling. No hyperparameter search was performed; this is an intentionally minimal configuration.
 
 \subsection{Evaluation Framework}
 
