@@ -1,0 +1,27 @@
+\frametitle{Task format}
+\begin{columns}[T,totalwidth=\textwidth]
+\column{0.48\textwidth}
+\begin{block}{Input prompt}
+\ttfamily\footnotesize
+MatrixSize: 3\\
+Matrix:\\
+-0.76785, -0.90799, -0.91854\\
+ 0.71092,  0.40732, -0.05165\\
+-0.80433, -0.01677, -0.05306
+\end{block}
+
+\column{0.48\textwidth}
+\begin{block}{Target output}
+\ttfamily\footnotesize
+Inverse:\\
+$a_{11}$, $a_{12}$, $a_{13}$\\
+$a_{21}$, $a_{22}$, $a_{23}$\\
+$a_{31}$, $a_{32}$, $a_{33}$
+\end{block}
+\end{columns}
+
+\vspace{0.6em}
+\begin{itemize}
+    \item The target text is simple in appearance, but it encodes a precise numerical operator.
+    \item This makes the task a hybrid of structured generation, numeric reasoning, and error-sensitive decoding.
+\end{itemize}

@@ -1,0 +1,141 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{The Core Scientific Question}
+
+Our central hypothesis is that matrix inversion is a canonical example of a computation that is hard to produce algorithmically but easy to verify. A candidate inverse $X$ for input $A$ can be checked via the residual $\|AX - I\|_F$, making correctness unambiguous. The question we investigate is whether supervised fine-tuning can induce behavior consistent with approximate inverse computation in this setting---or whether the model learns only surface regularities such as output format and value ranges without satisfying the algebraic constraint.
+
+We use a controlled synthetic setup to isolate this question from confounds such as ambiguous ground truth, label noise, or distribution mismatch.
+
+\subsection{Matrix Generation and Stability Criteria}
+
+We generate synthetic $n \times n$ matrices ($n \in \{2, 3\}$) by uniform random sampling from $[-1, 1]$, followed by stability filtering. To avoid ill-posed or numerically fragile inverse targets, we apply three criteria:
+
+\begin{enumerate}
+    \item \textbf{Determinant threshold}: $|\det(A)| > 0.05$. This threshold ensures full rank and avoids near-singular matrices whose inverses have extremely large entries; below this threshold, numerical precision in the target serialization would be insufficient to distinguish from degenerate cases.
+    \item \textbf{Condition number bound}: $\kappa(A) < 50$. A condition number above this value implies that small perturbations in input encoding can produce large changes in the inverse, making the mapping harder to learn reliably. Both thresholds were chosen as conservative heuristic bounds based on standard numerical stability considerations.
+    \item \textbf{Residual validation}: The computed gold inverse $X^*$ must satisfy $\|AX^* - I\|_F < 10^{-8}$, confirming that our ground truth is numerically sound.
+\end{enumerate}
+
+We sample up to 20{,}000 candidates per matrix size and retain 500 examples per size, for a total dataset of 1{,}000 examples.
+
+\subsection{Data Serialization and Format}
+
+Inputs and targets are serialized in a deterministic machine-readable text format. A representative example:
+
+\begin{verbatim}
+MatrixSize: 3
+Matrix:
+0.39195, -0.18209, -0.65341
+-0.68713, -0.49951, 0.09845
+0.42919, 0.32039, -0.44013
+\end{verbatim}
+
+\noindent The target output:
+\begin{verbatim}
+Inverse:
+1.50708, -2.31690, -2.75565
+-2.08222, 0.86379, 3.28444
+-0.04613, -1.63052, -2.56829
+\end{verbatim}
+
+\noindent Design rationale: (1) Strict, exact headers (\texttt{MatrixSize:}, \texttt{Matrix:}, \texttt{Inverse:}) are required by the parser, enabling reliable detection of missing or malformed blocks; (2) Row-major, comma-separated ordering makes structural errors detectable; (3) Fixed 5-decimal precision balances floating-point accuracy with token length.
+
+At inference time, the prompt is appended with the open header \verb|"\nInverse:\n"| so the model generates numeric rows directly, without needing to produce the header itself. Model outputs are post-processed by a truncation step that retains only the first valid \texttt{Inverse:} block, discarding any subsequent repetitions---this bounds the amount of looped content that reaches the parser. One known tradeoff is that strict header requirements may cause valid outputs to be classified as format failures if the model produces correct values with non-standard delimiters.
+
+\subsection{Train/Val/Test Split}
+
+We use a reproducible 80/10/10 split (seed = 123) across the full 1{,}000-example dataset:
+\begin{itemize}
+    \item \textbf{Train}: 800 examples
+    \item \textbf{Validation}: 100 examples
+    \item \textbf{Test}: 100 examples (48 of size $2 \times 2$, 52 of size $3 \times 3$)
+\end{itemize}
+
+The split is randomized across both matrix sizes jointly; it is not stratified separately by size. The test-set composition of 48 and 52 examples reflects the random split outcome, not a deliberate allocation. All reported results are on the held-out test set.
+
+\subsection{Model and Training Setup}
+
+\textbf{Base model}: Llama-3.2-3B \cite{llama32024}, a 3-billion-parameter decoder-only model.
+
+\textbf{LoRA configuration}:
+\begin{itemize}
+    \item Rank: $r = 16$
+    \item Alpha: $\alpha = 32$ (effective scaling factor $\alpha / r = 2$)
+    \item Dropout: 0.05
+\end{itemize}
+
+\textbf{Optimization}:
+\begin{itemize}
+    \item Optimizer: AdamW ($\beta_1 = 0.9$, $\beta_2 = 0.95$)
+    \item Learning rate: $5 \times 10^{-5}$ with 5\% linear warmup
+    \item Weight decay: 0.01
+    \item Training steps: 800 (batch size 16; 800 training examples are seen approximately once per step on average, giving roughly 1 epoch)
+    \item Infrastructure: Tinker SDK with async pipelining
+\end{itemize}
+
+\textbf{Inference}: Greedy decoding (temperature = 0.0). Stop sequences include \verb|<|eot_id|>|, \verb|\nInverse:|, and \verb|\n\nInverse:|, which terminate generation when the model begins a second inverse block. The inference service imposed an effective ceiling of 4{,}096 tokens; as discussed in~\S\ref{sec:experiments}, all fine-tuned model outputs reached this ceiling. No hyperparameter search was performed; this is an intentionally minimal configuration.
+
+\subsection{Evaluation Framework}
+
+This paper is a diagnostic case study of one specific training configuration, not a comprehensive benchmark of LLM algorithmic capability. Results should be interpreted in that scope.
+
+\subsubsection{Level 1 --- Syntactic Metrics}
+
+\begin{itemize}
+    \item \textbf{Parse success rate}: Percentage of outputs parseable into a valid matrix.
+    \item \textbf{Shape correctness}: Among parseable outputs, percentage with correct dimensions ($n \times n$).
+\end{itemize}
+
+\subsubsection{Level 2 --- Coarse Numeric Diagnostics}
+
+\textbf{Important caveat}: All Level 2 metrics are computed only on parseable (correct-shape) outputs. Baseline and fine-tuned Level 2 comparisons are therefore conditional on the respective parse-success subsets (100\% of examples for the baseline, 60\% for the fine-tuned model). Improvements in these metrics should be interpreted as improvements within the parseable subset, not as unconditional population-level improvements.
+
+Metrics are averaged across all parseable examples pooled together (not stratified by matrix size unless noted).
+
+\begin{itemize}
+    \item \textbf{Relative Frobenius error}: $\|X - A^{-1}\|_F / \|A^{-1}\|_F$. Values near 0 indicate predictions close to the true inverse; a value near 1.0 indicates the error is roughly equal to the magnitude of the target itself.
+
+    \item \textbf{Determinant ratio}: $\det(X) / \det(A^{-1})$. A perfect inverse satisfies $\det(A^{-1}) = 1/\det(A)$, so a ratio of 1.0 indicates correct determinant scale. A ratio near 0 indicates poor alignment with the target determinant scale.
+
+    \item \textbf{Sign agreement}: Fraction of entries where $\mathrm{sign}(X_{ij}) = \mathrm{sign}(A^{-1}_{ij})$. A value near 0.5 is expected for random predictions over balanced distributions; higher values indicate improved alignment of predicted sign structure with the gold inverse.
+
+    \item \textbf{Spectral error}: Largest singular value of $(X - A^{-1})$. Captures the magnitude of the dominant error direction, complementing the Frobenius norm.
+
+    \item \textbf{Copy-detection distances}:
+    \begin{itemize}
+        \item $\|X - A\|_F$: Distance from the prediction to the input matrix.
+        \item $\|X - A^T\|_F$: Distance from the prediction to the transpose of the input.
+        \item $\|X - (-A)\|_F$: Distance from the prediction to the negation of the input.
+    \end{itemize}
+    These detect whether the model is producing a trivial transformation of its input rather than computing the inverse. Large values indicate the prediction is not a simple copy, though they must be read alongside other metrics to characterize what the prediction actually contains.
+\end{itemize}
+
+\subsubsection{Level 3 --- True Inverse Correctness}
+
+\begin{itemize}
+    \item \textbf{Left residual}: $\|AX - I\|_F$. Primary success criterion.
+    \item \textbf{Right residual}: $\|XA - I\|_F$. Checks both-sided inverse consistency for square matrices; for an exact inverse, both residuals are zero.
+    \item \textbf{Tolerance-based accuracy}:
+    \begin{itemize}
+        \item \textbf{Strict}: $\|AX - I\|_F < 10^{-2}$
+        \item \textbf{Medium}: $\|AX - I\|_F < 5 \times 10^{-2}$
+        \item \textbf{Loose}: $\|AX - I\|_F < 10^{-1}$
+    \end{itemize}
+    Passing even the loose tolerance would constitute evidence of approximate inverse behavior in this setup. All three failing simultaneously indicates the output is far from satisfying $AX \approx I$.
+\end{itemize}
+
+\subsubsection{Failure Mode Taxonomy}
+
+We classify each output into one of six categories. Categories were defined a priori; some (EOS\_ONLY, PROMPT\_ECHO) were not observed in the reported run. When an output could in principle fit multiple categories, assignment follows the order below, with earlier categories taking precedence:
+
+\begin{itemize}
+    \item \texttt{EOS\_ONLY}: Output is empty after special-token removal.
+    \item \texttt{PROMPT\_ECHO}: Output mirrors the input prompt verbatim.
+    \item \texttt{REPEATED\_BLOCK\_LOOP}: Output enters repetition loops and exhausts the token budget without a complete matrix.
+    \item \texttt{SHAPE\_FORMAT}: Output is partially parseable but has incorrect dimensions.
+    \item \texttt{NUMERICALLY\_WRONG}: Correct shape, but residual $> 10^{-1}$ (loose tolerance failure).
+    \item \texttt{SUCCESS}: Residual $< 10^{-2}$ (strict tolerance pass).
+\end{itemize}
+
+This taxonomy distinguishes \emph{decoding failures} from \emph{numeric failures}, making it possible to separate whether the bottleneck is generation reliability or mathematical computation.

@@ -1,11 +1,18 @@
 {
-  "total_count": 8,
-  "parse_success_rate": 0.0,
-  "is_correct_shape_rate": 0.0,
+  "total_count": 100,
+  "parse_success_rate": 1.0,
+  "is_correct_shape_rate": 1.0,
   "by_size": {
+    "2": {
+      "count": 48,
+      "parse_success_rate": 1.0,
+      "pass_rate_strict": 0.0,
+      "pass_rate_medium": 0.0,
+      "pass_rate_loose": 0.0
+    },
     "3": {
-      "count": 8,
-      "parse_success_rate": 0.0,
+      "count": 52,
+      "parse_success_rate": 1.0,
       "pass_rate_strict": 0.0,
       "pass_rate_medium": 0.0,
       "pass_rate_loose": 0.0
@@ -14,22 +21,24 @@
   "pass_rate_strict": 0.0,
   "pass_rate_medium": 0.0,
   "pass_rate_loose": 0.0,
+  "avg_frobenius_identity_left": 1.8354356073657498,
+  "avg_frobenius_identity_right": 1.851298547062145,
   "failure_mode_breakdown": {
-    "total_count": 8,
+    "total_count": 100,
     "counts": {
-      "EOS_ONLY": 8,
+      "EOS_ONLY": 0,
       "PROMPT_ECHO": 0,
       "REPEATED_BLOCK_LOOP": 0,
       "SHAPE_FORMAT": 0,
-      "NUMERICALLY_WRONG": 0,
+      "NUMERICALLY_WRONG": 100,
       "SUCCESS": 0
     },
     "percentages": {
-      "EOS_ONLY": 1.0,
+      "EOS_ONLY": 0.0,
       "PROMPT_ECHO": 0.0,
       "REPEATED_BLOCK_LOOP": 0.0,
       "SHAPE_FORMAT": 0.0,
-      "NUMERICALLY_WRONG": 0.0,
+      "NUMERICALLY_WRONG": 1.0,
       "SUCCESS": 0.0
     }
   }

@@ -1,0 +1,43 @@
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    box/.style={rectangle, draw, fill=blue!10, minimum width=2.5cm, minimum height=0.8cm, font=\small\ttfamily, align=center},
+    arrow/.style={->, >=stealth, thick},
+    label/.style={font=\tiny, text width=2.5cm, align=center}
+]
+
+% Phase boxes
+\node[box] (phase1) at (0,5) {Generate\\Matrices};
+\node[label, below=0.1cm of phase1] {$2{\times}2$ and $3{\times}3$\\+ stability filters};
+
+\node[box] (phase2) at (2.5,5) {Serialize\\Dataset};
+\node[label, below=0.1cm of phase2] {Deterministic text\\format; 5-decimal};
+
+\node[box] (phase3) at (5,5) {Build\\Splits};
+\node[label, below=0.1cm of phase3] {800 / 100 / 100\\train/val/test};
+
+\node[box] (phase4) at (0,2.5) {Baseline\\Evaluation};
+\node[label, below=0.1cm of phase4] {Eval frozen\\Llama-3.2-3B};
+
+\node[box] (phase5) at (2.5,2.5) {Train LoRA};
+\node[label, below=0.1cm of phase5] {$r{=}16$, $\alpha{=}32$\\800 steps};
+
+\node[box] (phase6) at (5,2.5) {Fine-Tuned\\Evaluation};
+\node[label, below=0.1cm of phase6] {Re-eval +\\3-level diagnostics};
+
+\node[box] (output) at (2.5,0) {experiment\_\\summary.json};
+\node[label, below=0.1cm of output] {Metrics \&\\Diagnostics};
+
+% Arrows
+\draw[arrow] (phase1) -- (phase2);
+\draw[arrow] (phase2) -- (phase3);
+\draw[arrow] (phase3) -| (phase4);
+\draw[arrow] (phase3) -| (phase5);
+\draw[arrow] (phase4) -- (output);
+\draw[arrow] (phase5) -- (phase6);
+\draw[arrow] (phase6) -- (output);
+
+\end{tikzpicture}
+\caption{Six-stage MatrixInvLLM pipeline. (1) Generate stable $2 \times 2$ and $3 \times 3$ matrices with determinant ($|\det A| > 0.05$) and condition number ($\kappa < 50$) filters; 500 examples per size. (2) Serialize to deterministic text format with 5-decimal precision. (3) Split 1{,}000 examples into 800 train / 100 val / 100 test. (4) Evaluate untrained Llama-3.2-3B baseline on 100 test examples. (5) Apply LoRA fine-tuning ($r{=}16$, $\alpha{=}32$, 800 steps) on training set. (6) Re-evaluate fine-tuned model using a three-level diagnostic suite: syntactic well-formedness, coarse numeric structure, and residual-based inverse correctness.}
+\label{fig:pipeline}
+\end{figure}

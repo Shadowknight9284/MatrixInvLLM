@@ -1,0 +1,88 @@
+\section{Experiments and Results}
+\label{sec:experiments}
+
+We evaluate both the untrained baseline and the LoRA fine-tuned Llama-3.2-3B on 100 held-out test examples (48 of size $2 \times 2$, 52 of size $3 \times 3$) across all three diagnostic levels described in~\S\ref{sec:methodology}.
+
+\subsection{Baseline Behavior (Untrained Model)}
+
+The untrained Llama-3.2-3B produces syntactically valid output on \textbf{100\%} of test examples---every output is parseable and correctly shaped. This is itself informative: the model has sufficient prior knowledge of the serialization format to emit matrix-like text without any fine-tuning.
+
+However, syntactic success does not translate to mathematical success. Residuals are:
+\[
+\|AX - I\|_F = 1.835 \quad \text{and} \quad \|XA - I\|_F = 1.851 \quad \text{(avg.\ over 100 examples)}
+\]
+Both values are far above any acceptable tolerance, and numeric accuracy is 0\% under strict, medium, and loose thresholds alike. All 100 outputs are classified \texttt{NUMERICALLY\_WRONG}.
+
+The extended diagnostics reveal further structure:
+\begin{itemize}
+    \item \textbf{Determinant ratio}: 0.045 --- the determinants of predicted matrices are roughly $1/22$\textsuperscript{nd} the scale of the true inverse's determinant. The model has no control over the determinant of its output.
+    \item \textbf{Sign agreement}: 0.503 --- essentially at chance, meaning the model's predictions are no more sign-aligned with the true inverse than a random matrix.
+    \item \textbf{Relative Frobenius error}: 1.030 --- predictions are as far from the true inverse, proportionally, as the inverse itself is from the origin. This confirms near-random numeric content.
+    \item \textbf{Spectral error}: 5.015 --- the dominant direction of error is large, indicating no directional bias toward the true inverse.
+    \item \textbf{Copy distances}: $\|X - A\|_F = 1.448$, $\|X - A^T\|_F = 1.585$, $\|X - (-A)\|_F = 2.119$. The relatively small $\|X - A\|_F$ compared to $\|X - (-A)\|_F$ suggests the baseline outputs may be loosely similar in magnitude to the input, though not as a simple copy.
+\end{itemize}
+
+\noindent\textbf{Summary}: The baseline model is a format-competent but numerically uninformed predictor. It produces the correct output \emph{structure} with no apparent relationship between input and output values.
+
+\subsection{Fine-Tuned Model Behavior}
+
+After LoRA fine-tuning (800 steps on 800 training examples), we observe two simultaneous effects: improvement in coarse numeric diagnostics, and degradation in generation reliability.
+
+\subsubsection*{Generation Reliability}
+
+Only \textbf{60\%} of fine-tuned outputs are parseable and correctly shaped (vs.\ 100\% baseline). The 40-percentage-point drop is distributed across two decoding pathologies:
+\begin{itemize}
+    \item \texttt{REPEATED\_BLOCK\_LOOP}: 22 examples (22\%) --- the model enters a repetition loop, exhausting the token budget without completing a valid matrix.
+    \item \texttt{SHAPE\_FORMAT}: 18 examples (18\%) --- the model produces partial output with wrong dimensions.
+\end{itemize}
+
+Notably, the fine-tuned model hits the 4{,}096-token limit on \emph{every} example, compared to the baseline's typical 52--55 tokens per output. This suggests fine-tuning disrupted the model's length-control mechanism, causing over-generation rather than clean termination.
+
+By matrix size: parse success is \textbf{70.8\%} for $2 \times 2$ and \textbf{50.0\%} for $3 \times 3$, indicating that larger matrices suffer more severe generation instability.
+
+\subsubsection*{Numeric Diagnostics (among 60 parseable outputs)}
+
+Despite the reliability drop, the fine-tuned model's parseable outputs exhibit meaningfully improved inverse-like structure:
+
+\begin{itemize}
+    \item \textbf{Determinant ratio}: 0.639 (vs.\ 0.045 baseline, $\Delta = +0.594$) --- the model now produces outputs with determinants much closer to the correct scale, a substantial improvement.
+    \item \textbf{Sign agreement}: 0.795 (vs.\ 0.503 baseline, $\Delta = +0.292$) --- 79.5\% of predicted entries have the correct sign, well above chance. The model is learning which entries should be positive or negative.
+    \item \textbf{Relative Frobenius error}: 0.727 (vs.\ 1.030 baseline, $\Delta = -0.303$) --- predictions are now roughly 27\% closer, proportionally, to the true inverse than the baseline.
+    \item \textbf{Spectral error}: 3.829 (vs.\ 5.015 baseline, $\Delta = -1.186$) --- the dominant error direction has shrunk by 24\%.
+    \item \textbf{Residuals}: $\|AX - I\|_F = 1.719$ (vs.\ 1.835 baseline), $\|XA - I\|_F = 1.480$ (vs.\ 1.851 baseline). The right residual improves more substantially.
+    \item \textbf{Copy distances}: $\|X - A\|_F = 3.175$ (vs.\ 1.448 baseline, $\Delta = +1.727$) --- fine-tuned outputs are much farther from being a copy of the input. Similarly, $\|X - A^T\|_F$ and $\|X - (-A)\|_F$ both increase. This indicates the model has stopped producing input-like outputs and is generating genuinely different values, though those values still do not satisfy $AX = I$.
+\end{itemize}
+
+\subsubsection*{True Inverse Correctness}
+
+Despite these improvements, inverse accuracy remains \textbf{0\%} under all tolerance levels (strict, medium, and loose). No parseable output satisfies $\|AX - I\|_F < 10^{-1}$.
+
+\subsection{Comparative Summary and Failure Mode Analysis}
+
+The complete comparison is shown in Table~\ref{tab:results}. Table~\ref{tab:failure_modes} breaks down the fine-tuned failure mode distribution.
+
+The net picture from the deltas is:
+\begin{itemize}
+    \item Fine-tuning substantially reduced trivial copying behavior ($\|X - A\|_F$ rose from 1.45 to 3.18), consistent with the model learning that the inverse is \emph{different from} the input.
+    \item Fine-tuning improved the model's representation of what an inverse \emph{looks like} at the level of sign, scale, and relative magnitude.
+    \item But these improvements are insufficient to satisfy $AX \approx I$, meaning the learned structure is still too coarse or too inaccurate to yield valid inverses.
+    \item And fine-tuning introduced a severe generation reliability penalty: a 40-point drop in parse rate, driven by looping and shape errors, that makes the fine-tuned model less deployable than the baseline at the output level.
+\end{itemize}
+
+\subsection{The Three-Level Gap}
+
+The results illustrate a three-level gap between syntactic, structural, and functional success:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Level} & \textbf{Baseline} & \textbf{Fine-Tuned} \\
+\midrule
+Syntactic (parse + shape) & 100.0\% & 60.0\% \\
+Structural (sign agreement) & 50.3\% & 79.5\% \\
+Functional (any tolerance pass) & 0.0\% & 0.0\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Fine-tuning closes the structural gap substantially but leaves the functional gap intact. The bottlenecks are insufficient numeric precision and, critically, a decoding instability that eliminates 40\% of outputs before they can even be evaluated.

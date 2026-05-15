@@ -137,19 +137,78 @@ def main():
         logger.info(f"Experiment summary successfully generated at {summary_path}")
         
         # Log Summary Table Highlights
-        print("\n" + "="*50)
-        print("          EXPERIMENT SUMMARY HIGHLIGHTS")
-        print("="*50)
-        print(f"{'Metric':<25} | {'Baseline':<10} | {'Finetuned':<10} | {'Delta':<10}")
-        print("-" * 50)
-        
-        metrics_to_show = ["parse_success_rate", "is_correct_shape_rate", "pass_rate_strict", "pass_rate_medium", "pass_rate_loose"]
-        for m in metrics_to_show:
-            b_val = baseline_metrics.get(m, 0)
-            f_val = ft_metrics.get(m, 0)
+        W = 62
+        print("\n" + "=" * W)
+        print("              EXPERIMENT SUMMARY HIGHLIGHTS")
+        print("=" * W)
+        print(f"{'Metric':<30} | {'Baseline':>9} | {'Finetuned':>9} | {'Delta':>9}")
+        print("-" * W)
+
+        pct_metrics = [
+            "parse_success_rate",
+            "is_correct_shape_rate",
+            "pass_rate_strict",
+            "pass_rate_medium",
+            "pass_rate_loose",
+        ]
+        for m in pct_metrics:
+            b_val = baseline_metrics.get(m, 0) or 0
+            f_val = ft_metrics.get(m, 0) or 0
             d_val = f_val - b_val
-            print(f"{m:<25} | {b_val:10.2%} | {f_val:10.2%} | {d_val:+10.2%}")
-        print("="*50 + "\n")
+            print(f"{m:<30} | {b_val:>9.2%} | {f_val:>9.2%} | {d_val:>+9.2%}")
+
+        print("-" * W)
+
+        def _fmt(v, width=9, decimals=4):
+            return f"{v:{width}.{decimals}f}" if v is not None else f"{'N/A':>{width}}"
+
+        def _fmt_delta(b, f, width=9, decimals=4):
+            return f"{f - b:>+{width}.{decimals}f}" if (b is not None and f is not None) else f"{'N/A':>{width}}"
+
+        float_metrics = [
+            ("avg_frobenius_identity_left",  "||AX-I||_F (avg)"),
+            ("avg_frobenius_identity_right", "||XA-I||_F (avg)"),
+            ("avg_frobenius_identity_left",  ""),   # spacer handled below
+        ]
+
+        # Identity residuals
+        for key, label in [
+            ("avg_frobenius_identity_left",  "||AX-I||_F (avg)"),
+            ("avg_frobenius_identity_right", "||XA-I||_F (avg)"),
+        ]:
+            b_val = baseline_metrics.get(key)
+            f_val = ft_metrics.get(key)
+            print(f"{label:<30} | {_fmt(b_val)} | {_fmt(f_val)} | {_fmt_delta(b_val, f_val)}")
+
+        print("-" * W)
+
+        # Extended metrics
+        ext_metrics = [
+            ("avg_relative_frob_error", "Relative ||X-A^-1||_F (avg)"),
+            ("avg_det_ratio",           "det ratio (avg, 1.0=perfect)"),
+            ("avg_trace_abs_error",     "Trace abs error (avg)"),
+            ("avg_sign_agreement",      "Sign agreement (avg)"),
+            ("avg_spectral_error",      "Spectral error (avg)"),
+        ]
+        for key, label in ext_metrics:
+            b_val = baseline_metrics.get(key)
+            f_val = ft_metrics.get(key)
+            print(f"{label:<30} | {_fmt(b_val)} | {_fmt(f_val)} | {_fmt_delta(b_val, f_val)}")
+
+        print("-" * W)
+
+        # Copy-detection metrics (lower = more copying)
+        copy_metrics = [
+            ("avg_frob_vs_input",     "||X-A||_F (copy detect)"),
+            ("avg_frob_vs_transpose", "||X-A^T||_F (transpose detect)"),
+            ("avg_frob_vs_neg_input", "||X-(-A)||_F (neg copy detect)"),
+        ]
+        for key, label in copy_metrics:
+            b_val = baseline_metrics.get(key)
+            f_val = ft_metrics.get(key)
+            print(f"{label:<30} | {_fmt(b_val)} | {_fmt(f_val)} | {_fmt_delta(b_val, f_val)}")
+
+        print("=" * W + "\n")
         
     else:
         logger.error("Evaluation failed to produce complete metrics for comparison.")

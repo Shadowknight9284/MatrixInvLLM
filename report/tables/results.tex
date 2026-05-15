@@ -1,0 +1,51 @@
+\begin{table}[h!]
+\centering
+\caption{Full Diagnostic Comparison: Baseline vs.\ Fine-Tuned on Test Set ($n = 100$ examples; 48 of size $2 \times 2$, 52 of size $3 \times 3$). Extended metrics are computed over parseable outputs only (100 baseline, 60 fine-tuned). $\uparrow$ = higher is better; $\downarrow$ = lower is better.}
+\label{tab:results}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Metric} & \textbf{Baseline} & \textbf{Fine-Tuned} & \textbf{Delta} \\
+\midrule
+\multicolumn{4}{c}{\textit{Generation Reliability}} \\
+Parse / shape rate & 100.00\% & 60.00\% & $-40.00$ pp \\
+\midrule
+\multicolumn{4}{c}{\textit{True Inverse Correctness (Level 3)}} \\
+Accuracy --- strict ($\|AX-I\|_F < 10^{-2}$) & 0.0\% & 0.0\% & $+0.0$ pp \\
+Accuracy --- medium ($< 5 \times 10^{-2}$) & 0.0\% & 0.0\% & $+0.0$ pp \\
+Accuracy --- loose ($< 10^{-1}$) & 0.0\% & 0.0\% & $+0.0$ pp \\
+Avg $\|AX - I\|_F$ $\downarrow$ & 1.8354 & 1.7191 & $-0.1163$ \\
+Avg $\|XA - I\|_F$ $\downarrow$ & 1.8513 & 1.4800 & $-0.3713$ \\
+\midrule
+\multicolumn{4}{c}{\textit{Coarse Numeric Structure (Level 2, parseable only)}} \\
+Avg relative $\|X - A^{-1}\|_F$ $\downarrow$ & 1.0301 & 0.7273 & $-0.3028$ \\
+Avg determinant ratio $\uparrow$ & 0.0451 & 0.6390 & $+0.5939$ \\
+Avg sign agreement $\uparrow$ & 0.5033 & 0.7949 & $+0.2916$ \\
+Avg spectral error $\downarrow$ & 5.0149 & 3.8292 & $-1.1857$ \\
+\midrule
+\multicolumn{4}{c}{\textit{Copy-Detection Distances (parseable only)}} \\
+Avg $\|X - A\|_F$ (input copy?) & 1.4476 & 3.1753 & $+1.7277$ \\
+Avg $\|X - A^T\|_F$ (transpose copy?) & 1.5852 & 2.7599 & $+1.1747$ \\
+Avg $\|X - (-A)\|_F$ (negation copy?) & 2.1186 & 3.9595 & $+1.8410$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1.5cm}
+
+\begin{table}[h!]
+\centering
+\caption{Fine-Tuned Model Failure Mode Breakdown ($n = 100$ test examples). The baseline has no looping or shape failures; all 100 baseline outputs are \texttt{NUMERICALLY\_WRONG}.}
+\label{tab:failure_modes}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Failure Mode} & \textbf{Count} & \textbf{Percent} \\
+\midrule
+\texttt{NUMERICALLY\_WRONG} & 60 & 60.0\% \\
+\texttt{REPEATED\_BLOCK\_LOOP} & 22 & 22.0\% \\
+\texttt{SHAPE\_FORMAT} & 18 & 18.0\% \\
+\texttt{SUCCESS} & 0 & 0.0\% \\
+\midrule
+Total & 100 & 100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}

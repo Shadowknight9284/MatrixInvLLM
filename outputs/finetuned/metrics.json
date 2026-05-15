@@ -1,11 +1,18 @@
 {
-  "total_count": 8,
-  "parse_success_rate": 0.875,
-  "is_correct_shape_rate": 0.875,
+  "total_count": 100,
+  "parse_success_rate": 0.6,
+  "is_correct_shape_rate": 0.6,
   "by_size": {
+    "2": {
+      "count": 48,
+      "parse_success_rate": 0.7083333333333334,
+      "pass_rate_strict": 0.0,
+      "pass_rate_medium": 0.0,
+      "pass_rate_loose": 0.0
+    },
     "3": {
-      "count": 8,
-      "parse_success_rate": 0.875,
+      "count": 52,
+      "parse_success_rate": 0.5,
       "pass_rate_strict": 0.0,
       "pass_rate_medium": 0.0,
       "pass_rate_loose": 0.0
@@ -14,22 +21,24 @@
   "pass_rate_strict": 0.0,
   "pass_rate_medium": 0.0,
   "pass_rate_loose": 0.0,
+  "avg_frobenius_identity_left": 1.7190682732500142,
+  "avg_frobenius_identity_right": 1.4800175302284264,
   "failure_mode_breakdown": {
-    "total_count": 8,
+    "total_count": 100,
     "counts": {
       "EOS_ONLY": 0,
       "PROMPT_ECHO": 0,
-      "REPEATED_BLOCK_LOOP": 0,
-      "SHAPE_FORMAT": 1,
-      "NUMERICALLY_WRONG": 7,
+      "REPEATED_BLOCK_LOOP": 22,
+      "SHAPE_FORMAT": 18,
+      "NUMERICALLY_WRONG": 60,
       "SUCCESS": 0
     },
     "percentages": {
       "EOS_ONLY": 0.0,
       "PROMPT_ECHO": 0.0,
-      "REPEATED_BLOCK_LOOP": 0.0,
-      "SHAPE_FORMAT": 0.125,
-      "NUMERICALLY_WRONG": 0.875,
+      "REPEATED_BLOCK_LOOP": 0.22,
+      "SHAPE_FORMAT": 0.18,
+      "NUMERICALLY_WRONG": 0.6,
       "SUCCESS": 0.0
     }
   }

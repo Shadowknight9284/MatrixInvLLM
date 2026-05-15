@@ -1,0 +1,30 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Why Matrix Inversion?}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Research Question and Contribution}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Key Findings}{4}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Paper Structure}{4}{subsection.1.4}%
+\contentsline {section}{\numberline {2}Methodology}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}The Core Scientific Question}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Matrix Generation and Stability Criteria}{4}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Data Serialization and Format}{5}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Train/Val/Test Split}{5}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Model and Training Setup}{5}{subsection.2.5}%
+\contentsline {subsection}{\numberline {2.6}Evaluation Framework}{6}{subsection.2.6}%
+\contentsline {subsubsection}{\numberline {2.6.1}Level 1 --- Syntactic Metrics}{6}{subsubsection.2.6.1}%
+\contentsline {subsubsection}{\numberline {2.6.2}Level 2 --- Coarse Numeric Diagnostics}{6}{subsubsection.2.6.2}%
+\contentsline {subsubsection}{\numberline {2.6.3}Level 3 --- True Inverse Correctness}{6}{subsubsection.2.6.3}%
+\contentsline {subsubsection}{\numberline {2.6.4}Failure Mode Taxonomy}{7}{subsubsection.2.6.4}%
+\contentsline {section}{\numberline {3}Experiments and Results}{7}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Baseline Behavior (Untrained Model)}{7}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Fine-Tuned Model Behavior}{8}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Comparative Summary and Failure Mode Analysis}{9}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}The Three-Level Gap}{9}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Discussion}{9}{section.4}%
+\contentsline {subsection}{\numberline {4.1}What the Results Reveal About LLM Arithmetic Reasoning}{9}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Why the Functional Gap Persists}{10}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Decoding Instability as a First-Class Finding}{10}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Implications for the Broader Question}{11}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Limitations}{11}{subsection.4.5}%
+\contentsline {section}{\numberline {5}Conclusion}{11}{section.5}%
+\contentsline {section}{\numberline {A}Tables}{13}{appendix.A}%
+\contentsline {section}{\numberline {B}Figures}{14}{appendix.B}%

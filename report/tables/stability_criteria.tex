@@ -1,0 +1,23 @@
+\begin{table}[h!]
+\centering
+\caption{Stability Criteria and Dataset Generation Statistics}
+\label{tab:stability}
+\begin{tabular}{lc}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Matrix sizes & $2 \times 2$ and $3 \times 3$ \\
+Samples per size (target) & 500 \\
+Total dataset size & 1{,}000 examples \\
+Train / Val / Test split & 800 / 100 / 100 \\
+Test set composition & 48 of size $2 \times 2$; 52 of size $3 \times 3$ \\
+Random distribution & Uniform $[-1, 1]$ \\
+Determinant threshold & $|\det(A)| > 0.05$ \\
+Condition number bound & $\kappa(A) < 50$ \\
+Residual tolerance (gold) & $\|AX - I\|_F < 10^{-8}$ \\
+Max generation attempts & 20{,}000 per size \\
+Decimal precision (serialization) & 5 \\
+Split seed & 123 \\
+\bottomrule
+\end{tabular}
+\end{table}

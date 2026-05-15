@@ -16,47 +16,62 @@ logger = logging.getLogger(__name__)
 
 def build_prompt(raw_prompt: str, matrix_size: int) -> str:
     """
-    Append a compact output-format hint so the model emits exactly
-    `matrix_size` rows of `matrix_size` comma-separated floats and nothing else.
+    Append the 'Inverse:' section header so the prompt ends mid-section.
 
-    The raw_prompt already contains the MatrixSize + Matrix body.
-    We append a minimal schema at the end.
+    Ending with an open section cues base models to continue generating
+    (avoiding the immediate-EOS failure caused by prompts that look
+    like complete documents).  The finetuned model produces the same rows
+    it learned during training regardless of what precedes the header.
     """
-    n = matrix_size
-
-    # Provide a schematic example without words to minimize echo.
-    example_rows = "\n".join([", ".join([f"a{i+1}{j+1}" for j in range(n)]) for i in range(n)])
-    # If n is very large, truncate the schema to a few rows just to show shape.
-    if n > 6:
-        example_rows = "\n".join(
-            [", ".join([f"a{i+1}{j+1}" for j in range(n)]) for i in range(3)]
-            + ["..."]
-            + [", ".join([f"a{n}{j+1}" for j in range(n)])]
-        )
-
-    instruction = (
-        "\n\n"
-        "Return only the inverse matrix in this exact format:\n"
-        "Inverse:\n"
-        f"{example_rows}\n\n"
-        "Do not repeat the matrix or add any explanation.\n"
-    )
-
-    return raw_prompt + instruction
+    return raw_prompt + "\nInverse:\n"
 
 def _truncate_to_first_inverse_block(text: str, matrix_size: int = 0) -> str:
     """
     Return the first 'Inverse:' header plus at most `matrix_size` numeric rows.
     Stops early at a second 'Inverse:' header if one appears first.
 
+    Also handles the case where the model glues a second 'Inverse:' directly onto
+    the last numeric row without a newline (e.g. "1.2, 3.4, 5.6Inverse:").  In
+    that case only the numeric prefix is kept and the inline header triggers the
+    same early-stop as a standalone header line.
+
+    No-header path: when the prompt already ends with 'Inverse:\\n' the model
+    only emits the numeric rows.  If an inline 'Inverse:' appears later (the
+    start of a repetition loop), everything before it is returned as the block.
+    Trailing alphabetic tokens that the decoder leaves between the last digit
+    and the inline header (e.g. 'g', 'ing' from a stripped <|eot_id|>) are
+    stripped before returning.
+
     When matrix_size == 0 the function falls back to header-boundary detection only.
     Logs a WARNING whenever any content is dropped.
     """
     _NUM_RE = re.compile(r"[-+]?\d")
     _HDR_RE = re.compile(r"(?im)^inverse\s*:?[ \t]*$")
+    _INLINE_HDR_RE = re.compile(r"(?i)inverse\s*:")
+
+    # Any 2+ letter word followed by ':' that appears after a digit — covers both
+    # 'Inverse:' and BPE-corruption variants like 'ING:', 'ings:', 'Ing:'.
+    _ANY_HDR_RE = re.compile(r'[A-Za-z]{2,}\s*:')
 
     first = _HDR_RE.search(text)
     if not first:
+        # No standalone Inverse: header.  The prompt likely already ends with
+        # 'Inverse:\n', so the model output is pure rows.  Find the earliest
+        # header-like marker (Inverse: or any corrupted BPE variant) and return
+        # everything before it, stripping trailing alphabetic garbage.
+        candidates = [m for m in (_INLINE_HDR_RE.search(text), _ANY_HDR_RE.search(text)) if m]
+        inline_first = min(candidates, key=lambda m: m.start()) if candidates else None
+        if inline_first:
+            before = text[:inline_first.start()]
+            # Strip trailing alphabetic garbage (e.g. 'g', 'ing', 'ING')
+            # left when <|eot_id|> is removed between the last digit and the marker.
+            before = re.sub(r'[A-Za-z]+\s*$', '', before).rstrip()
+            if before:
+                logger.warning(
+                    "No standalone Inverse: header; truncated before inline "
+                    "header (%d chars dropped).", len(text) - len(before)
+                )
+                return before
         return text
 
     header = text[first.start():first.end()]
@@ -67,9 +82,25 @@ def _truncate_to_first_inverse_block(text: str, matrix_size: int = 0) -> str:
     truncated = False
 
     for line in after_header.splitlines(keepends=True):
-        if _HDR_RE.match(line.rstrip()):
+        stripped = line.rstrip()
+
+        # Clean standalone header → stop.
+        if _HDR_RE.match(stripped):
             truncated = True
             break
+
+        # Inline header glued to end of a numeric row (e.g. "1.2, 3.4Inverse:").
+        # Take only the numeric prefix so the stored prediction stays clean.
+        inline_m = _INLINE_HDR_RE.search(stripped)
+        if inline_m:
+            prefix = stripped[:inline_m.start()].rstrip()
+            if prefix:
+                kept_lines.append(prefix + "\n")
+                if _NUM_RE.search(prefix):
+                    row_count += 1
+            truncated = True
+            break
+
         kept_lines.append(line)
         if line.strip() and _NUM_RE.search(line):
             row_count += 1

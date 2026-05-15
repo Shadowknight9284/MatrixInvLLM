@@ -1,0 +1,41 @@
+\section{Introduction}
+
+Large language models (LLMs) have demonstrated remarkable capabilities across language understanding and generation tasks. However, their ability to perform \emph{precise arithmetic reasoning}---especially on structured numeric problems with verifiable answers---remains poorly understood. A fundamental question is whether supervised fine-tuning can teach a model to internalize a mathematical \emph{function}, or whether it merely teaches the model to produce outputs that \emph{resemble} correct answers in format without satisfying the underlying constraints.
+
+\subsection{Why Matrix Inversion?}
+
+Matrix inversion is an ideal controlled benchmark for this question. Given a square matrix $A$, its inverse $A^{-1}$ is the unique matrix satisfying:
+\[
+A \cdot A^{-1} = I \qquad \text{and} \qquad A^{-1} \cdot A = I
+\]
+where $I$ is the identity matrix. Computing this by hand requires multi-step Gaussian elimination, careful row operations, and exact bookkeeping across $n^2$ entries---an operation that is cognitively demanding and error-prone for humans even at $3 \times 3$ scale. Yet the correctness of any candidate inverse $X$ can be verified instantly by checking the \emph{residual norms} $\|AX - I\|_F$ and $\|XA - I\|_F$.
+
+This asymmetry---hard to produce, easy to verify---makes matrix inversion a valuable probe for studying whether LLMs can learn computationally demanding patterns from examples. If a model sees many ($A$, $A^{-1}$) pairs during training, can it distill implicit inverse-computation structure into its weights? Or does it learn only surface regularities, such as the output format or plausible value ranges, without satisfying the algebraic constraint?
+
+\subsection{Research Question and Contribution}
+
+We investigate: \emph{Can an LLM learn to compute matrix inverses through supervised fine-tuning on synthetic data, and what does the failure mode reveal about LLM arithmetic reasoning?}
+
+To answer this, we design a rigorous experimental framework that:
+\begin{enumerate}
+    \item Generates 1{,}000 stable synthetic matrices ($2 \times 2$ and $3 \times 3$) with determinant and condition number filters to ensure well-posed inverse targets.
+    \item Uses gold-standard residual validation ($\|AX - I\|_F < 10^{-8}$) rather than symbolic comparison.
+    \item Employs deterministic text serialization for reproducible parsing and malformation detection.
+    \item Fine-tunes Llama-3.2-3B using LoRA on 800 training examples for 800 optimization steps.
+    \item Evaluates using a \emph{three-level diagnostic suite} distinguishing:
+    \begin{itemize}
+        \item \textbf{Syntactic well-formedness}: Is the output parseable into a valid matrix shape?
+        \item \textbf{Inverse-like numeric structure}: Do coarse diagnostics (determinant ratio, sign agreement, relative Frobenius error) indicate the model has learned something about what inverses look like?
+        \item \textbf{True inverse correctness}: Does the predicted matrix satisfy $\|AX - I\|_F < \varepsilon$ at any tolerance level?
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Key Findings}
+
+Our results reveal a layered failure structure. The baseline (untrained) model produces syntactically valid output 100\% of the time but with no inverse-like numeric content. Fine-tuning substantially improves coarse diagnostics---the determinant ratio rises from 0.045 to 0.639, sign agreement from 0.503 to 0.795---suggesting that the model has internalized partial inverse-like structure. However, true inverse accuracy remains 0\% under all residual-based tolerances, and fine-tuning simultaneously introduces severe generation instability: only 60\% of fine-tuned outputs are parseable, with the remainder failing via repetition loops or malformed shapes.
+
+The central finding is therefore not a simple ``format learned, function not learned'' story, but rather a \emph{graded partial learning} result: fine-tuning moved the model along the spectrum toward the target function without reaching it, and in doing so exposed a decoding reliability bottleneck that complicates interpretation.
+
+\subsection{Paper Structure}
+
+Section~\ref{sec:methodology} details our data generation, serialization, training setup, and the full evaluation metric suite. Section~\ref{sec:experiments} presents results across all three diagnostic levels. Section~\ref{sec:discussion} interprets the findings, discusses limitations, and outlines targeted future directions.
